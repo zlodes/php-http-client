@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+*.php diff=php
+
+* export-ignore
+/src/ -export-ignore
+/src/** -export-ignore
+/composer.json -export-ignore
+/README.md -export-ignore

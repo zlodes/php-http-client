@@ -1,0 +1,41 @@
+{
+  "name": "zlodes/http-client",
+  "description": "Observable, type-safe HTTP client for modern PHP",
+  "license": "proprietary",
+  "type": "library",
+  "config": {
+    "lock": false,
+    "audit": {
+      "abandoned": "report"
+    },
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "minimum-stability": "alpha",
+  "prefer-stable": true,
+  "autoload": {
+    "psr-4": {
+      "Zlodes\\Http\\Client\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Zlodes\\Http\\Client\\Tests\\": "tests"
+    }
+  },
+  "require": {
+    "php": "^8.4",
+    "psr/http-client": "^1.0",
+    "psr/http-message": "^2.0"
+  },
+  "require-dev": {
+    "guzzlehttp/psr7": "^2.9",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^12.0"
+  },
+  "suggest": {
+    "guzzlehttp/psr7": "PSR-7 implementation for building requests",
+    "amphp/http-client": "Async HTTP transport via fibers",
+    "open-telemetry/api": "OpenTelemetry tracing support"
+  }
+}
