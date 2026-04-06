@@ -17,9 +17,9 @@ use Zlodes\Http\Client\Contract\Request;
 use Zlodes\Http\Client\Contract\Response;
 use Zlodes\Http\Client\Contract\ResponseHydrator;
 use Zlodes\Http\Client\Contract\Transport;
-use Zlodes\Http\Client\Exception\HydrationException;
 use Zlodes\Http\Client\Exception\HttpClientException;
 use Zlodes\Http\Client\Exception\HttpErrorException;
+use Zlodes\Http\Client\Exception\HydrationException;
 
 final readonly class HttpClient implements Client
 {
@@ -55,7 +55,7 @@ final readonly class HttpClient implements Client
         $context = new RequestContext(
             httpRequest: $httpRequest,
             requestName: $request->getName(),
-            requestFactory: fn (): RequestInterface => $this->applyBaseUri($request->buildRequest()),
+            requestFactory: fn(): RequestInterface => $this->applyBaseUri($request->buildRequest()),
         );
 
         $httpResponse = $this->pipeline->handle($context);

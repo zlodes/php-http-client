@@ -1,0 +1,105 @@
+name: Continuous Integration
+
+on:
+  pull_request: ~
+  push:
+    branches: ['*']
+
+permissions:
+  contents: read
+  checks: write
+  id-token: write
+
+jobs:
+  composer-validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+      - run: composer validate --strict --ansi
+
+  composer-normalize:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+      - uses: ramsey/composer-install@v2
+        with:
+          composer-options: --optimize-autoloader
+      - run: composer normalize --dry-run --diff --ansi
+
+  php-code-sniffer:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2, cs2pr
+          coverage: none
+      - uses: ramsey/composer-install@v2
+        with:
+          composer-options: --optimize-autoloader
+      - run: composer phpcs
+
+  phpstan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+      - uses: ramsey/composer-install@v2
+        with:
+          composer-options: --optimize-autoloader
+      - run: vendor/bin/phpstan analyse --no-interaction
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v3.3.0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: xdebug
+
+      - uses: ramsey/composer-install@v2
+        with:
+          composer-options: --optimize-autoloader
+
+      - name: PHPUnit Tests
+        run: vendor/bin/phpunit --coverage-clover ./coverage.xml
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODE_COV_TOKEN }}
+          files: ./coverage.xml
+          verbose: true
