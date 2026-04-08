@@ -10,7 +10,9 @@ final class EmptyResponse implements Response
 {
     private static ?self $instance = null;
 
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     public static function instance(): self
     {

@@ -65,6 +65,11 @@ final readonly class HttpClient implements Client
         }
 
         if ($request->getResponseClass() === EmptyResponse::class) {
+            /**
+             * Optimization breaks type system
+             *
+             * @phpstan-ignore return.type
+             */
             return EmptyResponse::instance();
         }
 
