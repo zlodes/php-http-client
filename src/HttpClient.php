@@ -44,11 +44,11 @@ final readonly class HttpClient implements Client
      *
      * @param Request<TResponse> $request
      *
-     * @return TResponse|null
+     * @return TResponse
      *
      * @throws HttpClientException
      */
-    public function send(Request $request): ?Response
+    public function send(Request $request): Response
     {
         $httpRequest = $this->applyBaseUri($request->buildRequest());
 
@@ -62,10 +62,6 @@ final readonly class HttpClient implements Client
 
         if ($httpResponse->getStatusCode() >= 400) {
             $this->throwForErrorResponse($httpResponse, $request);
-        }
-
-        if ($request->getResponseClass() === null) {
-            return null;
         }
 
         $responseHydrator = $request instanceof HasResponseHydrator

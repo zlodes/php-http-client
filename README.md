@@ -2,7 +2,7 @@
 
 Observable, type-safe HTTP client for PHP 8.4+.
 
-Generic `Request<TResponse>` ensures `$client->send(request: $request)` returns the correct response type — verified by PHPStan at max level. Requests that don't need a response body (e.g. DELETE) can return `null` from `getResponseClass()` and the client will skip hydration.
+Generic `Request<TResponse>` ensures `$client->send(request: $request)` returns the correct response type — verified by PHPStan at max level.
 
 ## Features
 
@@ -119,48 +119,6 @@ $response = $client->send(
 );
 echo $response->name;
 ```
-
-## Fire-and-Forget Requests
-
-For requests that don't return a response body (e.g. DELETE, PUT with no content), return `null` from `getResponseClass()`. The client will skip hydration and return `null`:
-
-```php
-use GuzzleHttp\Psr7\Request;
-use Psr\Http\Message\RequestInterface;
-use Zlodes\Http\Client\Contract\Request as RequestContract;
-
-/**
- * @implements RequestContract<never>
- */
-final readonly class DeleteUserRequest implements RequestContract
-{
-    public function __construct(private int $userId) {}
-
-    public function getName(): string
-    {
-        return 'users.delete';
-    }
-
-    public function buildRequest(): RequestInterface
-    {
-        return new Request(
-            method: 'DELETE',
-            uri: "/users/{$this->userId}",
-        );
-    }
-
-    public function getResponseClass(): ?string
-    {
-        return null;
-    }
-}
-```
-
-```php
-$client->send(request: new DeleteUserRequest(userId: 42)); // returns null
-```
-
-Error handling still runs — `4xx/5xx` responses throw exceptions even for response-less requests.
 
 ## Per-Request Hydration Override
 
@@ -463,9 +421,7 @@ HttpClient::send(Request<T>)
     │   ├── Middleware 1
     │   ├── Middleware 2
     │   └── Transport::send() (innermost)
-    ├── error handling (4xx/5xx → ErrorResponseHandler → exception)
-    └── if getResponseClass() is null → return null
-        else → ResponseHydrator::hydrate() → T
+    └── ResponseHydrator::hydrate() → T
 ```
 
 ## Development

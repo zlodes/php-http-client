@@ -8,9 +8,6 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zlodes\Http\Client\Exception\TransportException;
 
-/**
- * Low-level HTTP transport that sends a PSR-7 request and returns a PSR-7 response.
- */
 interface Transport
 {
     /**
