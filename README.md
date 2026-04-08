@@ -120,6 +120,36 @@ $response = $client->send(
 echo $response->name;
 ```
 
+## Empty Response (Fire-and-Forget Requests)
+
+For requests that don't return a meaningful body (e.g., `DELETE`, `PUT` that returns `204`), use `EmptyResponse` to skip hydration entirely:
+
+```php
+use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\RequestInterface;
+use Zlodes\Http\Client\Contract\Request as RequestContract;
+use Zlodes\Http\Client\EmptyResponse;
+
+/**
+ * @implements RequestContract<EmptyResponse>
+ */
+final readonly class DeleteUserRequest implements RequestContract
+{
+    // ...
+
+    public function getResponseClass(): string
+    {
+        return EmptyResponse::class;
+    }
+}
+```
+
+The client detects `EmptyResponse` and returns a shared singleton instance — no hydrator is invoked, no deserialization happens.
+
+```php
+$client->send(request: new DeleteUserRequest(userId: 42));
+```
+
 ## Per-Request Hydration Override
 
 For APIs that need custom parsing, implement `HasResponseHydrator` on the request:

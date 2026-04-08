@@ -64,6 +64,10 @@ final readonly class HttpClient implements Client
             $this->throwForErrorResponse($httpResponse, $request);
         }
 
+        if ($request->getResponseClass() === EmptyResponse::class) {
+            return EmptyResponse::instance();
+        }
+
         $responseHydrator = $request instanceof HasResponseHydrator
             ? $request->getResponseHydrator()
             : $this->responseHydrator;
