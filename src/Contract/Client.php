@@ -6,6 +6,11 @@ namespace Zlodes\Http\Client\Contract;
 
 use Zlodes\Http\Client\Exception\HttpClientException;
 
+/**
+ * Sends an HTTP request and returns a hydrated response DTO.
+ *
+ * Returns null when the request declares no response class ({@see Request::getResponseClass()}).
+ */
 interface Client
 {
     /**
@@ -13,9 +18,9 @@ interface Client
      *
      * @param Request<TResponse> $request
      *
-     * @return TResponse
+     * @return TResponse|null
      *
      * @throws HttpClientException
      */
-    public function send(Request $request): Response;
+    public function send(Request $request): ?Response;
 }

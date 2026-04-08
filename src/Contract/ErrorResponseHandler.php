@@ -7,6 +7,9 @@ namespace Zlodes\Http\Client\Contract;
 use Psr\Http\Message\ResponseInterface;
 use Zlodes\Http\Client\Exception\HttpClientException;
 
+/**
+ * Maps HTTP error responses (4xx/5xx) into typed exceptions.
+ */
 interface ErrorResponseHandler
 {
     /**
