@@ -186,7 +186,7 @@ final readonly class ListUsersRequest implements CollectionRequest
 }
 ```
 
-Branch on `CollectionRequest` inside your hydrator to deserialize the array and wrap it in a `CollectionResponse`:
+Branch on `CollectionRequest` inside your hydrator and use `CollectionResponse::fromHydrated()` to build a typed response from a denormalizer payload of unknown shape — it validates the array shape and the element types at runtime and gives you back a `CollectionResponse<TItem>` without manual `@var` casts:
 
 ```php
 use Psr\Http\Message\ResponseInterface;
@@ -211,7 +211,7 @@ final readonly class JsonHydrator implements ResponseHydrator
                 format: 'json',
             );
 
-            return new CollectionResponse(items: $items);
+            return CollectionResponse::fromHydrated(request: $request, items: $items);
         }
 
         return $this->serializer->deserialize(

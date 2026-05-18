@@ -78,6 +78,11 @@ final readonly class HttpClient implements Client
             : $this->responseHydrator;
 
         try {
+            /**
+             * Hydrator returns Response (untyped); the Request<TResponse> contract guarantees the concrete type.
+             *
+             * @phpstan-ignore return.type
+             */
             return $responseHydrator->hydrate($httpResponse, $request);
         } catch (HydrationException $e) {
             throw $e;

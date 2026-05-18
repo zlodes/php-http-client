@@ -7,7 +7,7 @@ namespace Zlodes\Http\Client\Contract;
 use Psr\Http\Message\RequestInterface;
 
 /**
- * @template TResponse of Response
+ * @template-covariant TResponse of Response
  */
 interface Request
 {

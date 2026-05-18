@@ -10,11 +10,7 @@ use Zlodes\Http\Client\Exception\HydrationException;
 interface ResponseHydrator
 {
     /**
-     * @template TResponse of Response
-     *
-     * @param Request<TResponse> $request
-     *
-     * @return TResponse
+     * @param Request<Response> $request
      *
      * @throws HydrationException
      */
