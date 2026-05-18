@@ -150,6 +150,79 @@ The client detects `EmptyResponse` and returns a shared singleton instance — n
 $client->send(request: new DeleteUserRequest(userId: 42));
 ```
 
+## Collection Responses
+
+For endpoints that return a JSON array of items (e.g. `GET /users` → `[{...}, {...}]`), implement `CollectionRequest<TItem>` to get a typed, iterable response without writing a per-endpoint wrapper.
+
+```php
+use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\RequestInterface;
+use Zlodes\Http\Client\Contract\CollectionRequest;
+
+/**
+ * @implements CollectionRequest<UserDto>
+ */
+final readonly class ListUsersRequest implements CollectionRequest
+{
+    public function getName(): string
+    {
+        return 'users.list';
+    }
+
+    public function buildRequest(): RequestInterface
+    {
+        return new Request(method: 'GET', uri: 'https://api.example.com/users');
+    }
+
+    public function getResponseClass(): string
+    {
+        return CollectionResponse::class;
+    }
+
+    public function getItemClass(): string
+    {
+        return UserDto::class;
+    }
+}
+```
+
+Branch on `CollectionRequest` inside your hydrator to deserialize the array and wrap it in a `CollectionResponse`:
+
+```php
+use Psr\Http\Message\ResponseInterface;
+use Zlodes\Http\Client\CollectionResponse;
+use Zlodes\Http\Client\Contract\CollectionRequest;
+use Zlodes\Http\Client\Contract\Request;
+use Zlodes\Http\Client\Contract\Response;
+use Zlodes\Http\Client\Contract\ResponseHydrator;
+
+final readonly class JsonHydrator implements ResponseHydrator
+{
+    public function __construct(private SerializerInterface $serializer) {}
+
+    public function hydrate(ResponseInterface $response, Request $request): Response
+    {
+        $body = (string) $response->getBody();
+
+        if ($request instanceof CollectionRequest) {
+            $items = $this->serializer->deserialize(
+                data: $body,
+                type: $request->getItemClass() . '[]',
+                format: 'json',
+            );
+
+            return new CollectionResponse(items: $items);
+        }
+
+        return $this->serializer->deserialize(
+            data: $body,
+            type: $request->getResponseClass(),
+            format: 'json',
+        );
+    }
+}
+```
+
 ## Per-Request Hydration Override
 
 For APIs that need custom parsing, implement `HasResponseHydrator` on the request:
