@@ -15,14 +15,13 @@ use Zlodes\Http\Client\Contract\HasResponseHydrator;
 use Zlodes\Http\Client\Contract\HasTransportOptions;
 use Zlodes\Http\Client\Contract\Middleware;
 use Zlodes\Http\Client\Contract\Request;
-use Zlodes\Http\Client\Contract\RequestHandler;
 use Zlodes\Http\Client\Contract\Response;
 use Zlodes\Http\Client\Contract\ResponseHydrator;
 use Zlodes\Http\Client\Contract\Transport;
 use Zlodes\Http\Client\Exception\HttpClientException;
-use Zlodes\Http\Client\RequestContext;
 use Zlodes\Http\Client\Exception\HttpErrorException;
 use Zlodes\Http\Client\Exception\HydrationException;
+use Zlodes\Http\Client\Middleware\RequestTransportOptionsMiddleware;
 
 final readonly class HttpClient implements Client
 {
@@ -159,18 +158,7 @@ final readonly class HttpClient implements Client
             return null;
         }
 
-        return new readonly class ($request->getTransportOptions()) implements Middleware {
-            public function __construct(private TransportOptions $options)
-            {
-            }
-
-            public function process(RequestContext $context, RequestHandler $next): ResponseInterface
-            {
-                return $next->handle($context->withTransportOptions(
-                    $context->transportOptions->merge($this->options),
-                ));
-            }
-        };
+        return new RequestTransportOptionsMiddleware($request->getTransportOptions());
     }
 
     private function applyBaseUri(RequestInterface $httpRequest): RequestInterface
