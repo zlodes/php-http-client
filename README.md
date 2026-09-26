@@ -13,6 +13,7 @@ Generic `Request<TResponse>` ensures `$client->send(request: $request)` returns 
 - **Flexible hydration** — default `ResponseHydrator` on the client, per-request override via `HasResponseHydrator`
 - **Typed error handling** — map `4xx/5xx` responses into typed exceptions with reusable error handlers
 - **Per-request timeouts** — set total and connect timeouts globally, per client, or per endpoint
+- **Default headers** — set one header on every request; a caller-supplied value wins
 
 ## Installation
 
@@ -382,6 +383,35 @@ Which transport actually applies the options:
 - `GuzzleTransport` maps them to Guzzle's `timeout` and `connect_timeout`, and sends with `http_errors` disabled. A cURL timeout (error 28) is thrown as `TransportTimeoutException`, which extends `TransportException`, so a timeout is distinguishable from a refused connection.
 - `Psr18Transport` ignores them. PSR-18 has no per-request options, so configure timeouts on the wrapped client instead.
 
+## Default headers
+
+Each option sets one header. Stack them for more. If the request already has that header, the caller's value is left as-is. Header names are matched case-insensitively.
+
+```php
+use Zlodes\Http\Client\Factory\Option\WithHeader;
+
+$factory = new ClientFactory(defaults: [
+    new WithTransport($transport),
+    new WithResponseHydrator($hydrator),
+    new WithHeader('User-Agent', 'B2CORE Monolith/22.45.0 (tenant: acme)'),
+    new WithHeader('X-Tenant', 'acme'),
+]);
+```
+
+`WithHeader` only adds a `HeaderMiddleware` to the pipeline, so the same behaviour is available without the factory:
+
+```php
+use Zlodes\Http\Client\Middleware\HeaderMiddleware;
+
+$client = new HttpClient(
+    transport: $transport,
+    responseHydrator: $responseHydrator,
+    middlewares: [
+        new HeaderMiddleware('User-Agent', 'B2CORE Monolith/22.45.0'),
+    ],
+);
+```
+
 ## Middleware
 
 Middleware follows an onion model. Each middleware receives a `RequestContext` and a `RequestHandler $next`:
@@ -548,6 +578,7 @@ $billingClient = $factory->make(
 | `WithErrorResponseHandler(ErrorResponseHandler ...)` | Appends error handlers (additive)        |
 | `WithBaseUri(UriInterface)`                          | Sets the base URI (last-writer-wins)     |
 | `WithTimeout(?timeout, ?connectTimeout)`             | Appends a `TimeoutMiddleware` (additive) |
+| `WithHeader(name, value)`                            | Appends a `HeaderMiddleware` (additive) |
 
 Defaults are applied first, then `make()` options on top. Last-writer-wins options can be overridden per client; additive options accumulate across defaults and `make()` calls.
 

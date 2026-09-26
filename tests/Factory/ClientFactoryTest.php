@@ -21,6 +21,7 @@ use Zlodes\Http\Client\Factory\ClientFactory;
 use Zlodes\Http\Client\Factory\HttpClientConfig;
 use Zlodes\Http\Client\Factory\Option\WithBaseUri;
 use Zlodes\Http\Client\Factory\Option\WithErrorResponseHandler;
+use Zlodes\Http\Client\Factory\Option\WithHeader;
 use Zlodes\Http\Client\Factory\Option\WithMiddleware;
 use Zlodes\Http\Client\Factory\Option\WithResponseHydrator;
 use Zlodes\Http\Client\Factory\Option\WithTimeout;
@@ -206,6 +207,35 @@ final class ClientFactoryTest extends TestCase
         self::assertNotNull($captured);
         self::assertSame(5, $captured->timeout);
         self::assertSame(5, $captured->connectTimeout);
+    }
+
+    public function testWithHeaderSetsHeader(): void
+    {
+        $captured = null;
+
+        $transport = new class ($captured) implements Transport {
+            public function __construct(private ?RequestInterface &$captured)
+            {
+            }
+
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
+            {
+                $this->captured = $request;
+
+                return new Response(200);
+            }
+        };
+
+        $factory = new ClientFactory(defaults: [
+            new WithTransport($transport),
+            new WithResponseHydrator($this->createHydrator()),
+            new WithHeader('X-Tenant', 'acme'),
+        ]);
+
+        $factory->make()->send($this->createRequest());
+
+        self::assertNotNull($captured);
+        self::assertSame(['acme'], $captured->getHeader('X-Tenant'));
     }
 
     public function testCustomClientCreator(): void
