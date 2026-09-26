@@ -13,6 +13,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Zlodes\Http\Client\Exception\TransportException;
 use Zlodes\Http\Client\Transport\Psr18Transport;
+use Zlodes\Http\Client\TransportOptions;
 
 final class Psr18TransportTest extends TestCase
 {
@@ -33,7 +34,7 @@ final class Psr18TransportTest extends TestCase
         };
 
         $transport = new Psr18Transport($client);
-        $response = $transport->send($request);
+        $response = $transport->send($request, new TransportOptions(timeout: 5, connectTimeout: 1));
 
         self::assertSame($expectedResponse, $response);
     }
@@ -59,7 +60,7 @@ final class Psr18TransportTest extends TestCase
         $this->expectException(TransportException::class);
         $this->expectExceptionMessage('Connection refused');
 
-        $transport->send(new Request('GET', 'https://example.com'));
+        $transport->send(new Request('GET', 'https://example.com'), TransportOptions::none());
     }
 
     public function testTransportExceptionPreservesPrevious(): void
@@ -81,7 +82,7 @@ final class Psr18TransportTest extends TestCase
         $transport = new Psr18Transport($client);
 
         try {
-            $transport->send(new Request('GET', 'https://example.com'));
+            $transport->send(new Request('GET', 'https://example.com'), TransportOptions::none());
             self::fail('Expected TransportException');
         } catch (TransportException $e) {
             self::assertSame($clientException, $e->getPrevious());

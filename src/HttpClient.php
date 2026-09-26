@@ -12,6 +12,7 @@ use Zlodes\Http\Client\Contract\Client;
 use Zlodes\Http\Client\Contract\ErrorResponseHandler;
 use Zlodes\Http\Client\Contract\HasErrorResponseHandlers;
 use Zlodes\Http\Client\Contract\HasResponseHydrator;
+use Zlodes\Http\Client\Contract\HasTransportOptions;
 use Zlodes\Http\Client\Contract\Middleware;
 use Zlodes\Http\Client\Contract\Request;
 use Zlodes\Http\Client\Contract\Response;
@@ -20,6 +21,7 @@ use Zlodes\Http\Client\Contract\Transport;
 use Zlodes\Http\Client\Exception\HttpClientException;
 use Zlodes\Http\Client\Exception\HttpErrorException;
 use Zlodes\Http\Client\Exception\HydrationException;
+use Zlodes\Http\Client\Middleware\RequestTransportOptionsMiddleware;
 
 final readonly class HttpClient implements Client
 {
@@ -58,7 +60,7 @@ final readonly class HttpClient implements Client
             requestFactory: fn(): RequestInterface => $this->applyBaseUri($request->buildRequest()),
         );
 
-        $httpResponse = $this->pipeline->handle($context);
+        $httpResponse = $this->pipeline->handle($context, $this->requestOptionsStep($request));
 
         if ($httpResponse->getStatusCode() >= 400) {
             $this->throwForErrorResponse($httpResponse, $request);
@@ -143,6 +145,20 @@ final readonly class HttpClient implements Client
         }
 
         throw new HttpErrorException($request, $response);
+    }
+
+    /**
+     * Innermost pipeline step, so request options win over every middleware.
+     *
+     * @param Request<Response> $request
+     */
+    private function requestOptionsStep(Request $request): ?Middleware
+    {
+        if (! $request instanceof HasTransportOptions) {
+            return null;
+        }
+
+        return new RequestTransportOptionsMiddleware($request->getTransportOptions());
     }
 
     private function applyBaseUri(RequestInterface $httpRequest): RequestInterface

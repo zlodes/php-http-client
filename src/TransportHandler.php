@@ -18,6 +18,6 @@ final readonly class TransportHandler implements RequestHandler
 
     public function handle(RequestContext $context): ResponseInterface
     {
-        return $this->transport->send($context->httpRequest);
+        return $this->transport->send($context->httpRequest, $context->transportOptions);
     }
 }

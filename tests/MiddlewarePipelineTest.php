@@ -14,6 +14,7 @@ use Zlodes\Http\Client\Contract\RequestHandler;
 use Zlodes\Http\Client\Contract\Transport;
 use Zlodes\Http\Client\MiddlewarePipeline;
 use Zlodes\Http\Client\RequestContext;
+use Zlodes\Http\Client\TransportOptions;
 
 final class MiddlewarePipelineTest extends TestCase
 {
@@ -26,7 +27,7 @@ final class MiddlewarePipelineTest extends TestCase
             {
             }
 
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 return $this->response;
             }
@@ -43,7 +44,7 @@ final class MiddlewarePipelineTest extends TestCase
     public function testSingleMiddlewareWrapsTransport(): void
     {
         $transport = new class implements Transport {
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 return new Response(200, ['X-Transport' => 'true']);
             }
@@ -70,7 +71,7 @@ final class MiddlewarePipelineTest extends TestCase
         $order = [];
 
         $transport = new class implements Transport {
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 return new Response(200);
             }
@@ -123,7 +124,7 @@ final class MiddlewarePipelineTest extends TestCase
             {
             }
 
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 $this->capturedMethod = $request->getMethod();
 

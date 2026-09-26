@@ -12,6 +12,7 @@ Generic `Request<TResponse>` ensures `$client->send(request: $request)` returns 
 - **Fiber-compatible** — synchronous API that transparently supports async via AMP/Revolt fibers
 - **Flexible hydration** — default `ResponseHydrator` on the client, per-request override via `HasResponseHydrator`
 - **Typed error handling** — map `4xx/5xx` responses into typed exceptions with reusable error handlers
+- **Per-request timeouts** — set total and connect timeouts globally, per client, or per endpoint
 
 ## Installation
 
@@ -327,6 +328,60 @@ try {
 }
 ```
 
+## Timeouts
+
+Timeouts travel with the request as a `TransportOptions` value. `null` means "not set here" and never overwrites a value set earlier, so precedence is always the same: **request > client > global default**.
+
+```php
+use Zlodes\Http\Client\Factory\Option\WithTimeout;
+
+// Global default, applied to every client from this factory
+$factory = new ClientFactory(defaults: [
+    new WithTransport($transport),
+    new WithResponseHydrator($hydrator),
+    new WithTimeout(timeout: 10, connectTimeout: 3),
+]);
+
+// Per client: overrides only the values it sets
+$slowClient = $factory->make(
+    new WithTimeout(timeout: 60),
+);
+```
+
+For a single endpoint, implement `HasTransportOptions`. Those values win over everything else:
+
+```php
+use Zlodes\Http\Client\Contract\HasTransportOptions;
+use Zlodes\Http\Client\TransportOptions;
+
+final readonly class SlowReportRequest implements RequestContract, HasTransportOptions
+{
+    public function getTransportOptions(): TransportOptions
+    {
+        return new TransportOptions(timeout: 120);
+    }
+
+    // ... getName(), buildRequest(), getResponseClass()
+}
+```
+
+`WithTimeout` only adds a `TimeoutMiddleware` to the pipeline, so the same behaviour is available without the factory:
+
+```php
+use Zlodes\Http\Client\Middleware\TimeoutMiddleware;
+
+$client = new HttpClient(
+    transport: $transport,
+    responseHydrator: $responseHydrator,
+    middlewares: [new TimeoutMiddleware(timeout: 10, connectTimeout: 3)],
+);
+```
+
+Which transport actually applies the options:
+
+- `GuzzleTransport` maps them to Guzzle's `timeout` and `connect_timeout`, and sends with `http_errors` disabled. A cURL timeout (error 28) is thrown as `TransportTimeoutException`, which extends `TransportException`, so a timeout is distinguishable from a refused connection.
+- `Psr18Transport` ignores them. PSR-18 has no per-request options, so configure timeouts on the wrapped client instead.
+
 ## Middleware
 
 Middleware follows an onion model. Each middleware receives a `RequestContext` and a `RequestHandler $next`:
@@ -485,13 +540,14 @@ $billingClient = $factory->make(
 
 ### Available options
 
-| Option                                               | Behavior                              |
-|------------------------------------------------------|---------------------------------------|
-| `WithTransport(Transport)`                           | Sets the transport (last-writer-wins) |
-| `WithResponseHydrator(ResponseHydrator)`             | Sets the hydrator (last-writer-wins)  |
-| `WithMiddleware(Middleware ...)`                     | Appends middlewares (additive)        |
-| `WithErrorResponseHandler(ErrorResponseHandler ...)` | Appends error handlers (additive)     |
-| `WithBaseUri(UriInterface)`                          | Sets the base URI (last-writer-wins)  |
+| Option                                               | Behavior                                 |
+|------------------------------------------------------|------------------------------------------|
+| `WithTransport(Transport)`                           | Sets the transport (last-writer-wins)    |
+| `WithResponseHydrator(ResponseHydrator)`             | Sets the hydrator (last-writer-wins)     |
+| `WithMiddleware(Middleware ...)`                     | Appends middlewares (additive)           |
+| `WithErrorResponseHandler(ErrorResponseHandler ...)` | Appends error handlers (additive)        |
+| `WithBaseUri(UriInterface)`                          | Sets the base URI (last-writer-wins)     |
+| `WithTimeout(?timeout, ?connectTimeout)`             | Appends a `TimeoutMiddleware` (additive) |
 
 Defaults are applied first, then `make()` options on top. Last-writer-wins options can be overridden per client; additive options accumulate across defaults and `make()` calls.
 
@@ -519,11 +575,12 @@ $factory = new ClientFactory(
 
 ```
 HttpClient::send(Request<T>)
-    ├── builds RequestContext (PSR-7 request + name + factory)
+    ├── builds RequestContext (PSR-7 request + name + factory + TransportOptions)
     ├── MiddlewarePipeline (onion chain)
     │   ├── Middleware 1
     │   ├── Middleware 2
-    │   └── Transport::send() (innermost)
+    │   ├── request-level TransportOptions (innermost, wins)
+    │   └── Transport::send(request, options)
     └── ResponseHydrator::hydrate() → T
 ```
 
