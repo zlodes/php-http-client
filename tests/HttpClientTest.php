@@ -19,6 +19,7 @@ use Zlodes\Http\Client\Exception\HydrationException;
 use Zlodes\Http\Client\Exception\HttpClientException;
 use Zlodes\Http\Client\Exception\HttpErrorException;
 use Zlodes\Http\Client\HttpClient;
+use Zlodes\Http\Client\TransportOptions;
 
 final class HttpClientTest extends TestCase
 {
@@ -387,7 +388,7 @@ final class HttpClientTest extends TestCase
             {
             }
 
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 $this->captured = $request;
 
@@ -418,7 +419,7 @@ final class HttpClientTest extends TestCase
             {
             }
 
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 return $this->response;
             }

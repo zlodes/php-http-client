@@ -23,7 +23,9 @@ use Zlodes\Http\Client\Factory\Option\WithBaseUri;
 use Zlodes\Http\Client\Factory\Option\WithErrorResponseHandler;
 use Zlodes\Http\Client\Factory\Option\WithMiddleware;
 use Zlodes\Http\Client\Factory\Option\WithResponseHydrator;
+use Zlodes\Http\Client\Factory\Option\WithTimeout;
 use Zlodes\Http\Client\Factory\Option\WithTransport;
+use Zlodes\Http\Client\TransportOptions;
 use Zlodes\Http\Client\HttpClient;
 use Zlodes\Http\Client\RequestContext;
 
@@ -112,7 +114,7 @@ final class ClientFactoryTest extends TestCase
             {
             }
 
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 $this->captured = $request;
 
@@ -176,6 +178,36 @@ final class ClientFactoryTest extends TestCase
         self::assertSame(['A', 'B'], $order);
     }
 
+    public function testWithTimeoutMakeOverridesDefaults(): void
+    {
+        $captured = null;
+
+        $transport = new class ($captured) implements Transport {
+            public function __construct(private ?TransportOptions &$captured)
+            {
+            }
+
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
+            {
+                $this->captured = $options;
+
+                return new Response(200);
+            }
+        };
+
+        $factory = new ClientFactory(defaults: [
+            new WithTransport($transport),
+            new WithResponseHydrator($this->createHydrator()),
+            new WithTimeout(timeout: 30, connectTimeout: 5),
+        ]);
+
+        $factory->make(new WithTimeout(timeout: 5))->send($this->createRequest());
+
+        self::assertNotNull($captured);
+        self::assertSame(5, $captured->timeout);
+        self::assertSame(5, $captured->connectTimeout);
+    }
+
     public function testCustomClientCreator(): void
     {
         $capturedConfig = null;
@@ -222,7 +254,7 @@ final class ClientFactoryTest extends TestCase
             {
             }
 
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 return $this->response;
             }

@@ -18,13 +18,14 @@ use Zlodes\Http\Client\Contract\ResponseHydrator;
 use Zlodes\Http\Client\Contract\Transport;
 use Zlodes\Http\Client\HttpClient;
 use Zlodes\Http\Client\Tests\Fixture\FakeDto;
+use Zlodes\Http\Client\TransportOptions;
 
 final class CollectionRequestTest extends TestCase
 {
     public function testHttpClientReturnsCollectionResponseFromCollectionRequest(): void
     {
         $transport = new class implements Transport {
-            public function send(RequestInterface $request): ResponseInterface
+            public function send(RequestInterface $request, TransportOptions $options): ResponseInterface
             {
                 return new GuzzleResponse(
                     200,

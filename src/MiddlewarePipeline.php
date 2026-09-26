@@ -20,9 +20,13 @@ final readonly class MiddlewarePipeline implements RequestHandler
     ) {
     }
 
-    public function handle(RequestContext $context): ResponseInterface
+    public function handle(RequestContext $context, ?Middleware $innermost = null): ResponseInterface
     {
         $handler = new TransportHandler($this->transport);
+
+        if ($innermost !== null) {
+            $handler = new MiddlewareHandler($innermost, $handler);
+        }
 
         foreach (array_reverse($this->middlewares) as $middleware) {
             $handler = new MiddlewareHandler($middleware, $handler);
