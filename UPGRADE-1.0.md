@@ -51,6 +51,4 @@ $transport->shouldReceive('send')->once()->with(Mockery::on($matcher), Mockery::
 
 Set them with `WithTimeout` on a `ClientFactory`, with `TimeoutMiddleware` directly, or per endpoint by implementing `HasTransportOptions`. Precedence is request > client > global default.
 
-`Psr18Transport` ignores `TransportOptions`. PSR-18 has no per-request options; configure timeouts on the wrapped client.
-
-`GuzzleTransport` applies them. It requires `guzzlehttp/guzzle`, which this library now depends on.
+`Psr18Transport` ignores `TransportOptions`. PSR-18 has no per-request options; configure timeouts on the wrapped client, or implement a custom `Transport` that applies them.

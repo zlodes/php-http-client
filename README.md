@@ -21,10 +21,10 @@ Generic `Request<TResponse>` ensures `$client->send(request: $request)` returns 
 composer require zlodes/http-client
 ```
 
-You'll also need a PSR-7 implementation and a PSR-18 HTTP client:
+You'll also need a PSR-7 implementation and any PSR-18 HTTP client, for example:
 
 ```bash
-composer require guzzlehttp/psr7 guzzlehttp/guzzle
+composer require guzzlehttp/psr7 symfony/http-client
 ```
 
 Optional integrations such as logging and metrics are up to your application and middleware choices.
@@ -378,10 +378,7 @@ $client = new HttpClient(
 );
 ```
 
-Which transport actually applies the options:
-
-- `GuzzleTransport` maps them to Guzzle's `timeout` and `connect_timeout`, and sends with `http_errors` disabled. A cURL timeout (error 28) is thrown as `TransportTimeoutException`, which extends `TransportException`, so a timeout is distinguishable from a refused connection.
-- `Psr18Transport` ignores them. PSR-18 has no per-request options, so configure timeouts on the wrapped client instead.
+The bundled `Psr18Transport` ignores them. PSR-18 has no per-request options, so configure timeouts on the wrapped client instead. To honour per-request options, implement your own `Transport` and read them from the `TransportOptions` argument. Throw `TransportTimeoutException` (extends `TransportException`) on timeout so callers can tell a timeout from a refused connection.
 
 ## Default headers
 
